@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
 import '../../domain/vehicle.dart';
+import '../../../documents/presentation/pages/vehicle_documents_page.dart';
 import 'add_vehicle_page.dart';
 
 class VehicleDetailPage extends StatefulWidget {
@@ -130,6 +131,25 @@ class _VehicleDetailPageState extends State<VehicleDetailPage> {
               ),
             ),
             const SizedBox(height: 24),
+            Card(
+              child: ListTile(
+                leading: const Icon(Icons.description),
+                title: const Text('Documentos'),
+                subtitle: const Text('Ver y administrar documentos del vehículo'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => VehicleDocumentsPage(
+                        vehicleId: _vehicle.id,
+                        vehicleName: _vehicle.nickname,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 16),
             FilledButton.icon(
               onPressed: () => _confirmDelete(context),
               icon: const Icon(Icons.delete),
