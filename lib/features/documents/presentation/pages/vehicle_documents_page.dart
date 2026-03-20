@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import '../../data/document_local_storage.dart';
 import '../../domain/vehicle_document.dart';
 import 'add_document_page.dart';
@@ -15,7 +14,8 @@ class VehicleDocumentsPage extends StatefulWidget {
   });
 
   @override
-  State<VehicleDocumentsPage> createState() => _VehicleDocumentsPageState();
+  State<VehicleDocumentsPage> createState() =>
+      _VehicleDocumentsPageState();
 }
 
 class _VehicleDocumentsPageState extends State<VehicleDocumentsPage> {
@@ -30,20 +30,65 @@ class _VehicleDocumentsPageState extends State<VehicleDocumentsPage> {
     _loadDocuments();
   }
 
+  // 🔥 NUEVO: lógica de alertas
+  void _checkExpiringDocuments(List<VehicleDocument> docs) {
+    final now = DateTime.now();
+
+    final expired = docs.where((doc) {
+      return doc.expiryDate.isBefore(now);
+    }).toList();
+
+    final expiring = docs.where((doc) {
+      final diff = doc.expiryDate.difference(now).inDays;
+      return diff >= 0 && diff <= 30;
+    }).toList();
+
+    if (!mounted) return;
+
+    if (expired.isNotEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Tienes ${expired.length} documento(s) vencido(s)',
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } else if (expiring.isNotEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Tienes ${expiring.length} documento(s) por vencer',
+          ),
+          backgroundColor: Colors.orange,
+        ),
+      );
+    }
+  }
+
   Future<void> _loadDocuments() async {
     final allDocuments = await _storage.loadDocuments();
 
     if (!mounted) return;
 
+    final vehicleDocs = allDocuments
+        .where((doc) => doc.vehicleId == widget.vehicleId)
+        .toList();
+
     setState(() {
-      _documents = allDocuments
-          .where((doc) => doc.vehicleId == widget.vehicleId)
-          .toList();
+      _documents = vehicleDocs;
       _isLoading = false;
+    });
+
+    // 🔥 clave: ejecutar después del build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkExpiringDocuments(vehicleDocs);
     });
   }
 
-  Future<void> _persistAllDocuments(List<VehicleDocument> updatedVehicleDocs) async {
+  Future<void> _persistAllDocuments(
+    List<VehicleDocument> updatedVehicleDocs,
+  ) async {
     final allDocuments = await _storage.loadDocuments();
 
     final documentsFromOtherVehicles = allDocuments
@@ -51,6 +96,7 @@ class _VehicleDocumentsPageState extends State<VehicleDocumentsPage> {
         .toList();
 
     final merged = [...documentsFromOtherVehicles, ...updatedVehicleDocs];
+
     await _storage.saveDocuments(merged);
   }
 
@@ -64,6 +110,45 @@ class _VehicleDocumentsPageState extends State<VehicleDocumentsPage> {
     if (document == null) return;
 
     final updated = [..._documents, document];
+
+    setState(() {
+      _documents = updated;
+    });
+
+    await _persistAllDocuments(updated);
+
+    // 🔥 también evaluar después de agregar
+    _checkExpiringDocuments(updated);
+  }
+
+  Future<void> _deleteDocument(VehicleDocument document) async {
+    final shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Eliminar documento'),
+          content: Text(
+            '¿Seguro que quieres eliminar "${document.title}"?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancelar'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Eliminar'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldDelete != true) return;
+
+    final updated = _documents
+        .where((item) => item.id != document.id)
+        .toList();
 
     setState(() {
       _documents = updated;
@@ -113,10 +198,12 @@ class _VehicleDocumentsPageState extends State<VehicleDocumentsPage> {
                   )
                 : ListView.separated(
                     itemCount: _documents.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 12),
+                    separatorBuilder: (_, __) =>
+                        const SizedBox(height: 12),
                     itemBuilder: (context, index) {
                       final document = _documents[index];
-                      final statusColor = _statusColor(document.expiryDate);
+                      final statusColor =
+                          _statusColor(document.expiryDate);
 
                       return Card(
                         child: ListTile(
@@ -128,12 +215,18 @@ class _VehicleDocumentsPageState extends State<VehicleDocumentsPage> {
                             '${document.type}\nVence: ${_formatDate(document.expiryDate)}',
                           ),
                           isThreeLine: true,
-                          trailing: Text(
-                            _statusLabel(document.expiryDate),
-                            style: TextStyle(
-                              color: statusColor,
-                              fontWeight: FontWeight.w600,
-                            ),
+                          trailing: PopupMenuButton<String>(
+                            onSelected: (value) {
+                              if (value == 'delete') {
+                                _deleteDocument(document);
+                              }
+                            },
+                            itemBuilder: (context) => const [
+                              PopupMenuItem(
+                                value: 'delete',
+                                child: Text('Eliminar'),
+                              ),
+                            ],
                           ),
                         ),
                       );
