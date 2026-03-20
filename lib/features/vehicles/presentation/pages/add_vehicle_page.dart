@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../domain/vehicle.dart';
+import '../../../../core/constants/car_brands.dart';
 
 class AddVehiclePage extends StatefulWidget {
   final Vehicle? initialVehicle;
@@ -17,12 +18,12 @@ class _AddVehiclePageState extends State<AddVehiclePage> {
   final _formKey = GlobalKey<FormState>();
 
   late final TextEditingController _nicknameController;
-  late final TextEditingController _brandController;
   late final TextEditingController _modelController;
   late final TextEditingController _plateController;
   late final TextEditingController _yearController;
 
   bool get _isEditing => widget.initialVehicle != null;
+  String? _selectedBrand;
 
   @override
   void initState() {
@@ -31,18 +32,17 @@ class _AddVehiclePageState extends State<AddVehiclePage> {
     final vehicle = widget.initialVehicle;
 
     _nicknameController = TextEditingController(text: vehicle?.nickname ?? '');
-    _brandController = TextEditingController(text: vehicle?.brand ?? '');
     _modelController = TextEditingController(text: vehicle?.model ?? '');
     _plateController = TextEditingController(text: vehicle?.plate ?? '');
     _yearController = TextEditingController(
       text: vehicle != null ? vehicle.year.toString() : '',
     );
+    _selectedBrand = vehicle?.brand;
   }
 
   @override
   void dispose() {
     _nicknameController.dispose();
-    _brandController.dispose();
     _modelController.dispose();
     _plateController.dispose();
     _yearController.dispose();
@@ -56,7 +56,7 @@ class _AddVehiclePageState extends State<AddVehiclePage> {
       id: widget.initialVehicle?.id ??
           DateTime.now().millisecondsSinceEpoch.toString(),
       nickname: _nicknameController.text.trim(),
-      brand: _brandController.text.trim(),
+      brand: _selectedBrand!.trim(),
       model: _modelController.text.trim(),
       plate: _plateController.text.trim().toUpperCase(),
       year: int.parse(_yearController.text.trim()),
@@ -91,17 +91,29 @@ class _AddVehiclePageState extends State<AddVehiclePage> {
                 },
               ),
               const SizedBox(height: 16),
-              TextFormField(
-                controller: _brandController,
+              DropdownButtonFormField<String>(
+                initialValue: _selectedBrand,
                 decoration: const InputDecoration(
-                  labelText: 'Marca',
-                  hintText: 'Ej: Chevrolet',
+                    labelText: 'Marca',
                 ),
+                items: carBrands
+                    .map(
+                        (brand) => DropdownMenuItem(
+                        value: brand,
+                        child: Text(brand),
+                        ),
+                    )
+                    .toList(),
+                onChanged: (value) {
+                    setState(() {
+                    _selectedBrand = value;
+                    });
+                },
                 validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Ingresa la marca';
-                  }
-                  return null;
+                    if (value == null || value.trim().isEmpty) {
+                    return 'Selecciona una marca';
+                    }
+                    return null;
                 },
               ),
               const SizedBox(height: 16),
