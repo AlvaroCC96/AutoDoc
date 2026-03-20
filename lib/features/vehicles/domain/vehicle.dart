@@ -14,4 +14,26 @@ class Vehicle {
     required this.plate,
     required this.year,
   });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'nickname': nickname,
+      'brand': brand,
+      'model': model,
+      'plate': plate,
+      'year': year,
+    };
+  }
+
+  factory Vehicle.fromMap(Map<String, dynamic> map) {
+    return Vehicle(
+      id: map['id'] as String,
+      nickname: map['nickname'] as String,
+      brand: map['brand'] as String,
+      model: map['model'] as String,
+      plate: map['plate'] as String,
+      year: map['year'] as int,
+    );
+  }
 }

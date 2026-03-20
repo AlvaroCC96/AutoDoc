@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:uuid/uuid.dart';
 import '../../domain/vehicle.dart';
 import '../../../../core/constants/car_brands.dart';
 
@@ -16,6 +17,8 @@ class AddVehiclePage extends StatefulWidget {
 
 class _AddVehiclePageState extends State<AddVehiclePage> {
   final _formKey = GlobalKey<FormState>();
+
+  static const _uuid = Uuid();
 
   late final TextEditingController _nicknameController;
   late final TextEditingController _modelController;
@@ -53,8 +56,7 @@ class _AddVehiclePageState extends State<AddVehiclePage> {
     if (!_formKey.currentState!.validate()) return;
 
     final vehicle = Vehicle(
-      id: widget.initialVehicle?.id ??
-          DateTime.now().millisecondsSinceEpoch.toString(),
+      id: widget.initialVehicle?.id ?? _uuid.v4(),
       nickname: _nicknameController.text.trim(),
       brand: _selectedBrand!.trim(),
       model: _modelController.text.trim(),
