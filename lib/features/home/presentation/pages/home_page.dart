@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../vehicles/presentation/pages/vehicles_page.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -30,7 +31,13 @@ class HomePage extends StatelessWidget {
                 title: const Text('Mis vehículos'),
                 subtitle: const Text('Pronto podrás verlos aquí'),
                 trailing: const Icon(Icons.chevron_right),
-                onTap: () {},
+                onTap: () {
+                    Navigator.of(context).push(
+                        MaterialPageRoute(
+                        builder: (_) => const VehiclesPage(),
+                        ),
+                    );
+                },
               ),
             ),
             const SizedBox(height: 12),
