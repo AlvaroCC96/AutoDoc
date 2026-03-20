@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
 import '../../data/vehicle_local_storage.dart';
 import '../../domain/vehicle.dart';
 import 'add_vehicle_page.dart';
@@ -106,8 +107,13 @@ class _VehiclesPageState extends State<VehiclesPage> {
 
                       return Card(
                         child: ListTile(
-                          leading: const CircleAvatar(
-                            child: Icon(Icons.directions_car),
+                          leading: CircleAvatar(
+                            backgroundImage: vehicle.photoPath != null
+                                ? FileImage(File(vehicle.photoPath!))
+                                : null,
+                            child: vehicle.photoPath == null
+                                ? const Icon(Icons.directions_car)
+                                : null,
                           ),
                           title: Text(vehicle.nickname),
                           subtitle: Text(

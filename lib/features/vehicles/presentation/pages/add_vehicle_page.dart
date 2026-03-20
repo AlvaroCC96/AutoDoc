@@ -1,7 +1,11 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:uuid/uuid.dart';
-import '../../domain/vehicle.dart';
+
 import '../../../../core/constants/car_brands.dart';
+import '../../domain/vehicle.dart';
 
 class AddVehiclePage extends StatefulWidget {
   final Vehicle? initialVehicle;
@@ -18,15 +22,18 @@ class AddVehiclePage extends StatefulWidget {
 class _AddVehiclePageState extends State<AddVehiclePage> {
   final _formKey = GlobalKey<FormState>();
 
-  static const _uuid = Uuid();
-
   late final TextEditingController _nicknameController;
   late final TextEditingController _modelController;
   late final TextEditingController _plateController;
   late final TextEditingController _yearController;
 
-  bool get _isEditing => widget.initialVehicle != null;
+  static const _uuid = Uuid();
+  final ImagePicker _imagePicker = ImagePicker();
+
   String? _selectedBrand;
+  String? _selectedPhotoPath;
+
+  bool get _isEditing => widget.initialVehicle != null;
 
   @override
   void initState() {
@@ -40,7 +47,9 @@ class _AddVehiclePageState extends State<AddVehiclePage> {
     _yearController = TextEditingController(
       text: vehicle != null ? vehicle.year.toString() : '',
     );
+
     _selectedBrand = vehicle?.brand;
+    _selectedPhotoPath = vehicle?.photoPath;
   }
 
   @override
@@ -52,8 +61,22 @@ class _AddVehiclePageState extends State<AddVehiclePage> {
     super.dispose();
   }
 
+  Future<void> _pickImage() async {
+    final pickedFile = await _imagePicker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 80,
+    );
+
+    if (pickedFile == null) return;
+
+    setState(() {
+      _selectedPhotoPath = pickedFile.path;
+    });
+  }
+
   void _saveVehicle() {
     if (!_formKey.currentState!.validate()) return;
+    if (_selectedBrand == null || _selectedBrand!.trim().isEmpty) return;
 
     final vehicle = Vehicle(
       id: widget.initialVehicle?.id ?? _uuid.v4(),
@@ -62,6 +85,7 @@ class _AddVehiclePageState extends State<AddVehiclePage> {
       model: _modelController.text.trim(),
       plate: _plateController.text.trim().toUpperCase(),
       year: int.parse(_yearController.text.trim()),
+      photoPath: _selectedPhotoPath,
     );
 
     Navigator.of(context).pop(vehicle);
@@ -79,6 +103,31 @@ class _AddVehiclePageState extends State<AddVehiclePage> {
           key: _formKey,
           child: ListView(
             children: [
+              Center(
+                child: Column(
+                  children: [
+                    GestureDetector(
+                      onTap: _pickImage,
+                      child: CircleAvatar(
+                        radius: 48,
+                        backgroundImage: _selectedPhotoPath != null
+                            ? FileImage(File(_selectedPhotoPath!))
+                            : null,
+                        child: _selectedPhotoPath == null
+                            ? const Icon(Icons.camera_alt, size: 32)
+                            : null,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextButton.icon(
+                      onPressed: _pickImage,
+                      icon: const Icon(Icons.photo_library),
+                      label: const Text('Seleccionar foto'),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
               TextFormField(
                 controller: _nicknameController,
                 decoration: const InputDecoration(
@@ -96,26 +145,26 @@ class _AddVehiclePageState extends State<AddVehiclePage> {
               DropdownButtonFormField<String>(
                 initialValue: _selectedBrand,
                 decoration: const InputDecoration(
-                    labelText: 'Marca',
+                  labelText: 'Marca',
                 ),
                 items: carBrands
                     .map(
-                        (brand) => DropdownMenuItem(
+                      (brand) => DropdownMenuItem(
                         value: brand,
                         child: Text(brand),
-                        ),
+                      ),
                     )
                     .toList(),
                 onChanged: (value) {
-                    setState(() {
+                  setState(() {
                     _selectedBrand = value;
-                    });
+                  });
                 },
                 validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
+                  if (value == null || value.trim().isEmpty) {
                     return 'Selecciona una marca';
-                    }
-                    return null;
+                  }
+                  return null;
                 },
               ),
               const SizedBox(height: 16),

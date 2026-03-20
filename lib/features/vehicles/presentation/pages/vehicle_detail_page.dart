@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
 import '../../domain/vehicle.dart';
 import 'add_vehicle_page.dart';
 
@@ -103,6 +104,18 @@ class _VehicleDetailPageState extends State<VehicleDetailPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    Center(
+                      child: CircleAvatar(
+                        radius: 52,
+                        backgroundImage: _vehicle.photoPath != null
+                            ? FileImage(File(_vehicle.photoPath!))
+                            : null,
+                        child: _vehicle.photoPath == null
+                            ? const Icon(Icons.directions_car, size: 40)
+                            : null,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
                     Text(
                       _vehicle.nickname,
                       style: Theme.of(context).textTheme.headlineSmall,
