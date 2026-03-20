@@ -36,6 +36,33 @@ class _VehiclesPageState extends State<VehiclesPage> {
     });
   }
 
+  Future<void> _goToVehicleDetail(Vehicle vehicle) async {
+    final result = await Navigator.of(context).push<dynamic>(
+      MaterialPageRoute(
+        builder: (_) => VehicleDetailPage(vehicle: vehicle),
+      ),
+    );
+
+    if (result == null) return;
+
+    if (result is Map && result['deleted'] == true) {
+      setState(() {
+        _vehicles.removeWhere((item) => item.id == vehicle.id);
+      });
+      return;
+    }
+
+    if (result is Vehicle) {
+      final index = _vehicles.indexWhere((item) => item.id == result.id);
+
+      if (index == -1) return;
+
+      setState(() {
+        _vehicles[index] = result;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -76,19 +103,5 @@ class _VehiclesPageState extends State<VehiclesPage> {
         child: const Icon(Icons.add),
       ),
     );
-  }
-
-  Future<void> _goToVehicleDetail(Vehicle vehicle) async {
-    final deleted = await Navigator.of(context).push<bool>(
-        MaterialPageRoute(
-        builder: (_) => VehicleDetailPage(vehicle: vehicle),
-        ),
-    );
-
-    if (deleted == true) {
-        setState(() {
-        _vehicles.removeWhere((item) => item.id == vehicle.id);
-        });
-    }
   }
 }

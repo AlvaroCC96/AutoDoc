@@ -2,7 +2,12 @@ import 'package:flutter/material.dart';
 import '../../domain/vehicle.dart';
 
 class AddVehiclePage extends StatefulWidget {
-  const AddVehiclePage({super.key});
+  final Vehicle? initialVehicle;
+
+  const AddVehiclePage({
+    super.key,
+    this.initialVehicle,
+  });
 
   @override
   State<AddVehiclePage> createState() => _AddVehiclePageState();
@@ -11,11 +16,28 @@ class AddVehiclePage extends StatefulWidget {
 class _AddVehiclePageState extends State<AddVehiclePage> {
   final _formKey = GlobalKey<FormState>();
 
-  final _nicknameController = TextEditingController();
-  final _brandController = TextEditingController();
-  final _modelController = TextEditingController();
-  final _plateController = TextEditingController();
-  final _yearController = TextEditingController();
+  late final TextEditingController _nicknameController;
+  late final TextEditingController _brandController;
+  late final TextEditingController _modelController;
+  late final TextEditingController _plateController;
+  late final TextEditingController _yearController;
+
+  bool get _isEditing => widget.initialVehicle != null;
+
+  @override
+  void initState() {
+    super.initState();
+
+    final vehicle = widget.initialVehicle;
+
+    _nicknameController = TextEditingController(text: vehicle?.nickname ?? '');
+    _brandController = TextEditingController(text: vehicle?.brand ?? '');
+    _modelController = TextEditingController(text: vehicle?.model ?? '');
+    _plateController = TextEditingController(text: vehicle?.plate ?? '');
+    _yearController = TextEditingController(
+      text: vehicle != null ? vehicle.year.toString() : '',
+    );
+  }
 
   @override
   void dispose() {
@@ -31,7 +53,8 @@ class _AddVehiclePageState extends State<AddVehiclePage> {
     if (!_formKey.currentState!.validate()) return;
 
     final vehicle = Vehicle(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      id: widget.initialVehicle?.id ??
+          DateTime.now().millisecondsSinceEpoch.toString(),
       nickname: _nicknameController.text.trim(),
       brand: _brandController.text.trim(),
       model: _modelController.text.trim(),
@@ -46,7 +69,7 @@ class _AddVehiclePageState extends State<AddVehiclePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Agregar vehículo'),
+        title: Text(_isEditing ? 'Editar vehículo' : 'Agregar vehículo'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
@@ -100,68 +123,72 @@ class _AddVehiclePageState extends State<AddVehiclePage> {
                 controller: _yearController,
                 keyboardType: TextInputType.number,
                 decoration: const InputDecoration(
-                    labelText: 'Año',
-                    hintText: 'Ej: 2025',
+                  labelText: 'Año',
+                  hintText: 'Ej: 2025',
                 ),
                 maxLength: 4,
                 validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                        return 'Ingresa el año';
-                    }
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Ingresa el año';
+                  }
 
-                    final yearText = value.trim();
+                  final yearText = value.trim();
 
-                    // solo números
-                    if (!RegExp(r'^\d+$').hasMatch(yearText)) {
-                        return 'Solo números';
-                    }
+                  if (!RegExp(r'^\d+$').hasMatch(yearText)) {
+                    return 'Solo números';
+                  }
 
-                    if (yearText.length != 4) {
-                        return 'Debe tener 4 dígitos';
-                    }
+                  if (yearText.length != 4) {
+                    return 'Debe tener 4 dígitos';
+                  }
 
-                    final year = int.parse(yearText);
-                    if (year < 1900) {
-                        return 'Debe ser mayor a 1900';
-                    }
+                  final year = int.parse(yearText);
 
-                    if (year > DateTime.now().year + 1) {
-                        return 'Año no válido';
-                    }
-                    return null;
+                  if (year < 1900) {
+                    return 'Debe ser mayor a 1900';
+                  }
+
+                  if (year > DateTime.now().year + 1) {
+                    return 'Año no válido';
+                  }
+
+                  return null;
                 },
-            ),
+              ),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _plateController,
                 textCapitalization: TextCapitalization.characters,
                 decoration: const InputDecoration(
-                    labelText: 'Patente',
-                    hintText: 'Ej: ABCD11',
+                  labelText: 'Patente',
+                  hintText: 'Ej: ABCD11',
                 ),
                 maxLength: 6,
                 validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
+                  if (value == null || value.trim().isEmpty) {
                     return 'Ingresa la patente';
-                    }
+                  }
 
-                    final plate = value.trim();
+                  final plate = value.trim();
 
-                    if (plate.length > 6) {
+                  if (plate.length > 6) {
                     return 'Máximo 6 caracteres';
-                    }
+                  }
 
-                    if (!RegExp(r'^[A-Za-z0-9]+$').hasMatch(plate)) {
+                  if (!RegExp(r'^[A-Za-z0-9]+$').hasMatch(plate)) {
                     return 'Solo letras y números';
-                    }
-                    return null;
+                  }
+
+                  return null;
                 },
               ),
               const SizedBox(height: 24),
               FilledButton.icon(
                 onPressed: _saveVehicle,
                 icon: const Icon(Icons.save),
-                label: const Text('Guardar vehículo'),
+                label: Text(
+                  _isEditing ? 'Guardar cambios' : 'Guardar vehículo',
+                ),
               ),
             ],
           ),

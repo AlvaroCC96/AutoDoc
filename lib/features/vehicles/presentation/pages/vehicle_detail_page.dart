@@ -1,13 +1,41 @@
 import 'package:flutter/material.dart';
 import '../../domain/vehicle.dart';
+import 'add_vehicle_page.dart';
 
-class VehicleDetailPage extends StatelessWidget {
+class VehicleDetailPage extends StatefulWidget {
   final Vehicle vehicle;
 
   const VehicleDetailPage({
     super.key,
     required this.vehicle,
   });
+
+  @override
+  State<VehicleDetailPage> createState() => _VehicleDetailPageState();
+}
+
+class _VehicleDetailPageState extends State<VehicleDetailPage> {
+  late Vehicle _vehicle;
+
+  @override
+  void initState() {
+    super.initState();
+    _vehicle = widget.vehicle;
+  }
+
+  Future<void> _goToEditVehicle() async {
+    final updatedVehicle = await Navigator.of(context).push<Vehicle>(
+        MaterialPageRoute(
+        builder: (_) => AddVehiclePage(initialVehicle: _vehicle),
+        ),
+    );
+
+    if (updatedVehicle == null) return;
+
+    setState(() {
+        _vehicle = updatedVehicle;
+    });
+  }
 
   Future<void> _confirmDelete(BuildContext context) async {
     final shouldDelete = await showDialog<bool>(
@@ -16,7 +44,7 @@ class VehicleDetailPage extends StatelessWidget {
         return AlertDialog(
           title: const Text('Eliminar vehículo'),
           content: Text(
-            '¿Seguro que quieres eliminar "${vehicle.nickname}"?',
+            '¿Seguro que quieres eliminar "${_vehicle.nickname}"?',
           ),
           actions: [
             TextButton(
@@ -33,7 +61,7 @@ class VehicleDetailPage extends StatelessWidget {
     );
 
     if (shouldDelete == true && context.mounted) {
-      Navigator.of(context).pop(true);
+      Navigator.of(context).pop({'deleted': true});
     }
   }
 
@@ -41,7 +69,29 @@ class VehicleDetailPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(vehicle.nickname),
+        title: Text(_vehicle.nickname),
+        actions: [
+          IconButton(
+            onPressed: () async {
+                final updatedVehicle = await Navigator.of(context).push<Vehicle>(
+                MaterialPageRoute(
+                    builder: (_) => AddVehiclePage(initialVehicle: _vehicle),
+                ),
+                );
+
+                if (updatedVehicle == null) return;
+
+                if (!mounted) return;
+
+                setState(() {
+                _vehicle = updatedVehicle;
+                });
+
+                Navigator.of(context).pop(updatedVehicle);
+            },
+            icon: const Icon(Icons.edit),
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
@@ -54,14 +104,14 @@ class VehicleDetailPage extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      vehicle.nickname,
+                      _vehicle.nickname,
                       style: Theme.of(context).textTheme.headlineSmall,
                     ),
                     const SizedBox(height: 16),
-                    _InfoRow(label: 'Marca', value: vehicle.brand),
-                    _InfoRow(label: 'Modelo', value: vehicle.model),
-                    _InfoRow(label: 'Año', value: vehicle.year.toString()),
-                    _InfoRow(label: 'Patente', value: vehicle.plate),
+                    _InfoRow(label: 'Marca', value: _vehicle.brand),
+                    _InfoRow(label: 'Modelo', value: _vehicle.model),
+                    _InfoRow(label: 'Año', value: _vehicle.year.toString()),
+                    _InfoRow(label: 'Patente', value: _vehicle.plate),
                   ],
                 ),
               ),
