@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../domain/vehicle.dart';
 import 'add_vehicle_page.dart';
+import 'vehicle_detail_page.dart';
 
 class VehiclesPage extends StatefulWidget {
   const VehiclesPage({super.key});
@@ -64,7 +65,7 @@ class _VehiclesPageState extends State<VehiclesPage> {
                       ),
                       isThreeLine: true,
                       trailing: const Icon(Icons.chevron_right),
-                      onTap: () {},
+                      onTap: () => _goToVehicleDetail(vehicle),
                     ),
                   );
                 },
@@ -75,5 +76,19 @@ class _VehiclesPageState extends State<VehiclesPage> {
         child: const Icon(Icons.add),
       ),
     );
+  }
+
+  Future<void> _goToVehicleDetail(Vehicle vehicle) async {
+    final deleted = await Navigator.of(context).push<bool>(
+        MaterialPageRoute(
+        builder: (_) => VehicleDetailPage(vehicle: vehicle),
+        ),
+    );
+
+    if (deleted == true) {
+        setState(() {
+        _vehicles.removeWhere((item) => item.id == vehicle.id);
+        });
+    }
   }
 }
